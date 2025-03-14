@@ -7,29 +7,61 @@ using TMPro;
 
 public class RollManager : MonoBehaviour
 {
+    public Collection collection;
+    private static RollManager instance;
+    public GameObject MoneyPopUpPrefab;
+    public int StartMoney;
+    private static int money;
     public int weightCommon;
-    public Sprite[] Common;
+    public Dino[] Common;
     public int weightRare;
-    public Sprite[] Rare;
+    public Dino[] Rare;
     public int weightEpic;
-    public Sprite[] Epic;
+    public Dino[] Epic;
     public int weightLegendary;
-    public Sprite[] Legendary;
+    public Dino[] Legendary;
    
     public TMP_Text TotalText;
     public TMP_Text CommonText;
     public TMP_Text RareText;
     public TMP_Text EpicText;
     public TMP_Text LegendaryText;
+    public TMP_Text DinoNameText;
+    public TMP_Text moneyText;
+    public static TMP_Text MoneyText;
 
 
-   private float TotalRolls;
+    private float TotalRolls;
    private float CommonTotal;
    private float RareTotal;
    private float EpicTotal;
    private float LegendaryTotal;
+
+    public static int Money { get => money; set
+        {
+            instance.CreateMoneyPopUp(value - money);
+            money = value;
+            MoneyText.text = "Money: " + Money.ToString();
+            
+        } 
+    }
+
+    public void CreateMoneyPopUp(int value)
+    {   
+        Instantiate(MoneyPopUpPrefab,transform.parent).GetComponent<MoneyPopUp>().Money = value;
+    }
+    private void Start()
+   {
+        instance = this;
+        MoneyText = moneyText;
+        Money = StartMoney;
+        TotalRolls = 0;
+   }
+   
    public void Roll()
    {
+    if (Money < 10) return;
+    Money-=10;
     TotalRolls++;
     float TotalWeight = weightCommon + weightRare + weightEpic + weightLegendary;
     float randomNumber = Random.Range(0,TotalWeight);
@@ -55,9 +87,12 @@ public class RollManager : MonoBehaviour
     GetRandomSpriteFromPool(Legendary);
    }
 
-    private void GetRandomSpriteFromPool(Sprite[] pool)
+    private void GetRandomSpriteFromPool(Dino[] pool)
    {
-        GetComponent<Image>().sprite = pool[Random.Range(0,pool.Length-1)];
+        Dino randomDino = pool[(int)Mathf.Floor(Random.Range(0,pool.Length))];
+        GetComponent<Image>().sprite = randomDino.image;
+        DinoNameText.text = randomDino.name;
+        collection.AddDino(randomDino);
         TotalText.text = "Total Rolls: " + TotalRolls.ToString();
         CommonText.text = "Common: " + CommonTotal.ToString() +" (" + GetPercentage(CommonTotal)+"%)";
         RareText.text = "Rare: " +RareTotal.ToString() + " (" +GetPercentage(RareTotal)+"%)";
@@ -69,7 +104,30 @@ public class RollManager : MonoBehaviour
     return (Mathf.Round(rolls/TotalRolls * 10000)/100).ToString();
    }
 
-   void Update(){
-    //Roll();
+   public void Work(Button button)
+   {
+       StartCoroutine(waitForWork(button));
+   }
+
+   public void RollMultiButton(){
+         StartCoroutine(RollMultiple(10));
+   }
+
+    IEnumerator void RollMultiple(int rolls)
+   {
+        if (Money < 10 * rolls) return;
+        Money -= 10 * rolls;
+        for (int i = 0; i < rolls; i++)
+        {
+            Roll();
+            yield return new WaitForSeconds(0.1f);
+        }
+   IEnumerator waitForWork(Button button)
+   {
+        button.interactable = false;
+        yield return new WaitForSeconds(2f);
+        button.interactable = true;
+        Money+=10;
+        MoneyText.text = "Money: " + Money.ToString();
    }
 }
