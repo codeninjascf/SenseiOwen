@@ -37,6 +37,9 @@ public class RollManager : MonoBehaviour
    private float EpicTotal;
    private float LegendaryTotal;
 
+   
+   private bool isRolling = false;
+
     public static int Money { get => money; set
         {
             instance.CreateMoneyPopUp(value - money);
@@ -58,10 +61,8 @@ public class RollManager : MonoBehaviour
         TotalRolls = 0;
    }
    
-   public void Roll()
+   private void Roll()
    {
-    if (Money < 10) return;
-    Money-=10;
     TotalRolls++;
     float TotalWeight = weightCommon + weightRare + weightEpic + weightLegendary;
     float randomNumber = Random.Range(0,TotalWeight);
@@ -108,20 +109,29 @@ public class RollManager : MonoBehaviour
    {
        StartCoroutine(waitForWork(button));
    }
+    public void rollSingle(){
+        if (Money < 10 || isRolling) return;
+        Money-=10;
+        Roll();
+    }
 
    public void RollMultiButton(){
-         StartCoroutine(RollMultiple(10));
+     if (isRolling) return;
+         StartCoroutine(RollMultiple());
    }
 
-    IEnumerator void RollMultiple(int rolls)
+    IEnumerator RollMultiple()
    {
-        if (Money < 10 * rolls) return;
-        Money -= 10 * rolls;
-        for (int i = 0; i < rolls; i++)
+        isRolling = true;
+        while (Money >= 10)
         {
+            Money -= 10;
             Roll();
             yield return new WaitForSeconds(0.1f);
         }
+        isRolling = false;
+    }
+
    IEnumerator waitForWork(Button button)
    {
         button.interactable = false;
